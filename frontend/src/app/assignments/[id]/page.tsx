@@ -41,20 +41,16 @@ export default function AssignmentView({ params }: { params: Promise<{ id: strin
     }
 
     const interval = setInterval(async () => {
-      // Secondary check: if state updated via websocket, clear immediately
-      if (assignment?.status === 'complete' || assignment?.status === 'error') {
-        clearInterval(interval);
-        return;
-      }
       const res = await fetch(`${API}/api/assignments/${id}`).catch(() => null);
       if (res?.ok) {
         const data = await res.json();
-        // Only set data if it doesn't revert a websocket 'complete' event
+        // Use functional state update to check the absolute latest state
+        setAssignment(prev => {
+          if (prev?.status === 'complete' || prev?.status === 'error') return prev;
+          return data;
+        });
         if (data.status === 'complete' || data.status === 'error') {
-          setAssignment(data);
           clearInterval(interval);
-        } else if (assignment?.status !== 'complete') {
-          setAssignment(data);
         }
       }
     }, 3000);
