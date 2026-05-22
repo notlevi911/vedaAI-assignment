@@ -4,9 +4,22 @@ import { Server, Socket } from 'socket.io';
 let ioInstance: Server | null = null;
 
 export function initWebSocket(httpServer: HTTPServer): Server {
+  const rawFrontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const allowedOrigin = rawFrontendUrl.replace(/\/$/, '');
+
   const io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (
+          origin === allowedOrigin || 
+          origin === 'http://localhost:3000' || 
+          origin.endsWith('.vercel.app')
+        ) {
+          return callback(null, true);
+        }
+        callback(new Error('Not allowed by CORS'));
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },
