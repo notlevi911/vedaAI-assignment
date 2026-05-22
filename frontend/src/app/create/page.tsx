@@ -7,7 +7,7 @@ import FileUpload from '@/components/FileUpload';
 import { useAssignmentStore } from '@/store/assignmentStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+const API = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
 
 const QUESTION_TYPES = [
   'Multiple Choice Questions',

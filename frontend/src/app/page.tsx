@@ -7,7 +7,7 @@ import AssignmentCard from '@/components/AssignmentCard';
 import { useAssignmentStore } from '@/store/assignmentStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+const API = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
 
 export default function Dashboard() {
   const { assignments, setAssignments, setLoading, isLoading } = useAssignmentStore();

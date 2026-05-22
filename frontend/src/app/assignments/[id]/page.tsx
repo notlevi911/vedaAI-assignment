@@ -8,7 +8,7 @@ import { useAssignmentStore } from '@/store/assignmentStore';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { Assignment } from '@/types';
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+const API = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000').replace(/\/$/, '');
 
 export default function AssignmentView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
