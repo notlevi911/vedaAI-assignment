@@ -34,20 +34,42 @@ export default function AssignmentView({ params }: { params: Promise<{ id: strin
 
   useEffect(() => {
     fetchAssignment();
+
+    // If the assignment is already finished locally, do not poll
+    if (assignment?.status === 'complete' || assignment?.status === 'error') {
+      return;
+    }
+
     const interval = setInterval(async () => {
+      // Secondary check: if state updated via websocket, clear immediately
+      if (assignment?.status === 'complete' || assignment?.status === 'error') {
+        clearInterval(interval);
+        return;
+      }
       const res = await fetch(`${API}/api/assignments/${id}`).catch(() => null);
       if (res?.ok) {
         const data = await res.json();
-        setAssignment(data);
-        if (data.status === 'complete' || data.status === 'error') clearInterval(interval);
+        // Only set data if it doesn't revert a websocket 'complete' event
+        if (data.status === 'complete' || data.status === 'error') {
+          setAssignment(data);
+          clearInterval(interval);
+        } else if (assignment?.status !== 'complete') {
+          setAssignment(data);
+        }
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [id, assignment?.status]);
 
   useEffect(() => {
     if (currentAssignment?._id === id) {
-      setAssignment((prev) => prev ? { ...prev, ...currentAssignment } : currentAssignment);
+      setAssignment((prev) => {
+        // Prevent reverting from complete to processing
+        if (prev?.status === 'complete' && currentAssignment.status !== 'complete') {
+          return prev;
+        }
+        return prev ? { ...prev, ...currentAssignment } : currentAssignment;
+      });
     }
   }, [currentAssignment, id]);
 

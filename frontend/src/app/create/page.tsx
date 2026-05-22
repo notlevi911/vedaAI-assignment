@@ -148,7 +148,7 @@ export default function CreateAssignment() {
             </div>
 
             {/* Fields Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+            <div className="create-grid">
               <div>
                 <FieldLabel>Assignment Title *</FieldLabel>
                 <Input value={form.title} onChange={(v) => setFormField('title', v)} placeholder="e.g. Chapter 5 Quiz" error={errors.title} />
@@ -181,7 +181,7 @@ export default function CreateAssignment() {
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0 }}>Question Type</h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 40, fontSize: 11, fontWeight: 600, color: '#9CA3AF', paddingRight: 36 }}>
+                <div className="desktop-only-labels">
                   <span>No. of Questions</span>
                   <span>Marks</span>
                 </div>
@@ -189,61 +189,72 @@ export default function CreateAssignment() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {form.questionTypes.map((qt) => (
-                  <div key={qt.id} className="slide-in" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div key={qt.id} className="slide-in question-type-row">
                     <select
                       value={qt.type}
                       onChange={(e) => updateQuestionType(qt.id, 'type', e.target.value)}
                       style={{
                         flex: 1, padding: '10px 12px', fontSize: 13, border: '1.5px solid #E5E7EB',
                         borderRadius: 10, background: '#fff', color: '#374151', outline: 'none',
+                        width: '100%',
                       }}
                     >
                       {QUESTION_TYPES.map((t) => <option key={t}>{t}</option>)}
                     </select>
 
-                    {/* Count */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <CounterBtn onClick={() => updateQuestionType(qt.id, 'count', Math.max(1, qt.count - 1))}>
-                        <Minus size={11} />
-                      </CounterBtn>
-                      <input
-                        type="number" min={1} value={qt.count}
-                        onChange={(e) => updateQuestionType(qt.id, 'count', Math.max(1, parseInt(e.target.value) || 1))}
-                        style={{ width: 40, textAlign: 'center', fontSize: 13, border: '1.5px solid #E5E7EB', borderRadius: 8, padding: '6px 4px', outline: 'none' }}
-                      />
-                      <CounterBtn onClick={() => updateQuestionType(qt.id, 'count', qt.count + 1)}>
-                        <Plus size={11} />
-                      </CounterBtn>
-                    </div>
+                    <div className="question-type-controls">
+                      {/* Count */}
+                      <div>
+                        <span className="mobile-label">Questions</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <CounterBtn onClick={() => updateQuestionType(qt.id, 'count', Math.max(1, qt.count - 1))}>
+                            <Minus size={11} />
+                          </CounterBtn>
+                          <input
+                            type="number" min={1} value={qt.count}
+                            onChange={(e) => updateQuestionType(qt.id, 'count', Math.max(1, parseInt(e.target.value) || 1))}
+                            style={{ width: 40, textAlign: 'center', fontSize: 13, border: '1.5px solid #E5E7EB', borderRadius: 8, padding: '6px 4px', outline: 'none' }}
+                          />
+                          <CounterBtn onClick={() => updateQuestionType(qt.id, 'count', qt.count + 1)}>
+                            <Plus size={11} />
+                          </CounterBtn>
+                        </div>
+                      </div>
 
-                    {/* Marks */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <CounterBtn onClick={() => updateQuestionType(qt.id, 'marks', Math.max(1, qt.marks - 1))}>
-                        <Minus size={11} />
-                      </CounterBtn>
-                      <input
-                        type="number" min={1} value={qt.marks}
-                        onChange={(e) => updateQuestionType(qt.id, 'marks', Math.max(1, parseInt(e.target.value) || 1))}
-                        style={{ width: 40, textAlign: 'center', fontSize: 13, border: '1.5px solid #E5E7EB', borderRadius: 8, padding: '6px 4px', outline: 'none' }}
-                      />
-                      <CounterBtn onClick={() => updateQuestionType(qt.id, 'marks', qt.marks + 1)}>
-                        <Plus size={11} />
-                      </CounterBtn>
-                    </div>
+                      {/* Marks */}
+                      <div>
+                        <span className="mobile-label">Marks</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <CounterBtn onClick={() => updateQuestionType(qt.id, 'marks', Math.max(1, qt.marks - 1))}>
+                            <Minus size={11} />
+                          </CounterBtn>
+                          <input
+                            type="number" min={1} value={qt.marks}
+                            onChange={(e) => updateQuestionType(qt.id, 'marks', Math.max(1, parseInt(e.target.value) || 1))}
+                            style={{ width: 40, textAlign: 'center', fontSize: 13, border: '1.5px solid #E5E7EB', borderRadius: 8, padding: '6px 4px', outline: 'none' }}
+                          />
+                          <CounterBtn onClick={() => updateQuestionType(qt.id, 'marks', qt.marks + 1)}>
+                            <Plus size={11} />
+                          </CounterBtn>
+                        </div>
+                      </div>
 
-                    <button
-                      type="button"
-                      onClick={() => removeQuestionType(qt.id)}
-                      disabled={form.questionTypes.length === 1}
-                      style={{
-                        width: 28, height: 28, borderRadius: 8, border: '1.5px solid #E5E7EB',
-                        background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: form.questionTypes.length === 1 ? 'not-allowed' : 'pointer',
-                        opacity: form.questionTypes.length === 1 ? 0.3 : 1, color: '#9CA3AF',
-                      }}
-                    >
-                      <X size={12} />
-                    </button>
+                      <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: 2 }}>
+                        <button
+                          type="button"
+                          onClick={() => removeQuestionType(qt.id)}
+                          disabled={form.questionTypes.length === 1}
+                          style={{
+                            width: 28, height: 28, borderRadius: 8, border: '1.5px solid #E5E7EB',
+                            background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            cursor: form.questionTypes.length === 1 ? 'not-allowed' : 'pointer',
+                            opacity: form.questionTypes.length === 1 ? 0.3 : 1, color: '#9CA3AF',
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -296,12 +307,7 @@ export default function CreateAssignment() {
         </main>
 
         {/* Footer */}
-        <div style={{
-          position: 'fixed', bottom: 0, left: 220, right: 0,
-          background: '#fff', borderTop: '1px solid #F3F4F6',
-          padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          zIndex: 20,
-        }} className="no-print">
+        <div className="create-footer no-print">
           <button
             onClick={() => router.back()}
             style={{
