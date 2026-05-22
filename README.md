@@ -1,175 +1,116 @@
-# 🔮 VedaAI — Enterprise AI Assessment Creator
+# VedaAI: Assessment Creator
 
-> A production-grade, highly resilient full-stack application that constructs pedagogically aligned question papers and exam booklets from documents using hybrid vector-semantic RAG pipelines. Powered by Gemini 2.5 Flash, Next.js 14/15, and Socket.io.
+VedaAI is a full-stack application that helps educators create pedagogically aligned question papers and exam booklets from their documents. It uses hybrid vector and semantic retrieval pipelines powered by Gemini 2.5 Flash, Next.js, and Socket.io.
 
----
+## Architecture Highlights
 
-## 🚀 Key Highlights & Resilient Architecture
+We designed VedaAI to be reliable under heavy load and network volatility. Here is how it works under the hood:
 
-VedaAI is designed to run reliably under heavy enterprise load, rate limits, and network volatility:
+1. **Hybrid Retrieval Pipeline**: 
+   * Primary Stage: We use semantic vector retrieval powered by the Gemini embedding model.
+   * Local Failover: If the Gemini API key is missing, the system automatically falls back to local Ollama.
+   * Zero Dependencies Failover: If all embedding services are unavailable, the system uses a BM25 inspired keyword saturation method to continue generating questions with exact match heuristics.
 
-1. **Smart Hybrid RAG Pipeline**:
-   - **Stage 1 (Primary)**: Semantic vector retrieval powered by `gemini-embedding-2` via the new `@google/genai` SDK.
-   - **Stage 2 (Local Failover)**: Automatic fallback to local Ollama (`nomic-embed-text`) if the Gemini API key is missing.
-   - **Stage 3 (Zero-Dependencies Failover)**: Advanced BM25-inspired keyword saturation retrieval. If all embedding services are down/unavailable, the system continues generating with exact-match and TF-IDF semantic heuristics.
-2. **Rate Limit Defenses (429 & 503 Backoff)**:
-   - Intelligent backoff parsing: If the API returns a rate-limit error (`429 / RESOURCE_EXHAUSTED`), the backend pauses and waits exactly **12 seconds** before retrying.
-   - True API Batching: Groups up to **80 text chunks** into a single request, reducing API calls by over **95%** and avoiding Free Tier rate limits.
-3. **Strict API Routing Rules**:
-   - If a `GEMINI_API_KEY` is present in the environment, the system will **never** trigger Ollama (avoiding local host resources/throttling). Ollama triggers *if and only if* no Gemini key is present in your environment.
-4. **Rich MCQ Rendering & PDF Generation**:
-   - Generates and stores multiple-choice options in a dedicated database schema.
-   - Renders them in a gorgeous, standard A4 style layout with auto-lettering (`A.`, `B.`, `C.`, `D.`) and prints them perfectly to PDFs.
+2. **Rate Limit Defenses**:
+   * If the API returns a rate limit error, the backend pauses and waits exactly 12 seconds before retrying.
+   * The system groups up to 80 text chunks into a single request, which drastically reduces API calls and helps avoid free tier limits.
 
----
+3. **PDF Generation**:
+   * The system generates multiple choice options and renders them in a standard A4 layout. It prints them cleanly to PDF format.
 
-## 🏗️ System Blueprint
+## Technology Stack
 
-```
-                     ┌──────────────────────────────────────────────────────┐
-                     │                   Next.js Frontend                   │
-                     │  Dashboard → Create → Assignment View (ExamPaper)    │
-                     │  Zustand store │ Socket.io client │ REST API calls   │
-                     └─────────────────────────┬────────────────────────────┘
-                                               │ HTTP + WebSocket
-                                               │ (Real-time updates)
-                     ┌─────────────────────────▼────────────────────────────┐
-                     │               Express Backend (TypeScript)           │
-                     │  REST Routes → BullMQ Queue → Gemini 2.5 Flash       │
-                     │  MongoDB (results) │ Redis (cache+jobs) │ Socket.io  │
-                     └──────────────────────────────────────────────────────┘
-```
+* **Frontend**: Next.js and Tailwind CSS for the user interface.
+* **State Management**: Zustand for managing application state.
+* **Real Time Updates**: Socket.io for bidirectional communication.
+* **PDF Processing**: jsPDF and html2canvas for converting the DOM to PDF.
+* **Backend**: Express and TypeScript.
+* **Database**: MongoDB with Mongoose for storage.
+* **Job Queue**: BullMQ and Redis for background processing.
+* **AI Generation**: Gemini 2.5 Flash for language modeling and Gemini Embedding for vectors.
 
----
+## Environment Variables
 
-## 🛠️ Tech Stack & Dependencies
+### Backend Configuration (backend/.env)
 
-| Component | Technology | Description |
-|---|---|---|
-| **Frontend** | Next.js 14/15, Tailwind CSS | React framework with custom styling system |
-| **State** | Zustand | Single-source state store |
-| **Real-time** | Socket.io | Bidirectional server-client updates |
-| **PDF Processing** | jsPDF + html2canvas | Full-fidelity DOM-to-A4 conversion |
-| **Backend** | Express + TypeScript | Type-safe REST server |
-| **Database** | MongoDB (Mongoose) | Schema-validated persistent document storage |
-| **Job Queue** | BullMQ + Redis | Background processing worker |
-| **AI Generation** | Gemini 2.5 Flash | SOTA fast cloud LLM |
-| **Embeddings** | Gemini Embedding 2 | Next-gen semantic vector generator |
+* `PORT`: The port for the Express server (default is 4000).
+* `MONGODB_URI`: Your MongoDB connection string.
+* `REDIS_HOST`: The host address of your Redis server.
+* `REDIS_PORT`: The port of your Redis server.
+* `GEMINI_API_KEY`: Your Google Gemini API key. Required for cloud usage.
+* `FRONTEND_URL`: The origin URL used for CORS configuration.
 
----
+### Frontend Configuration (frontend/.env.local)
 
-## ⚙️ Environment Configuration
+* `NEXT_PUBLIC_BACKEND_URL`: The address of your backend Express API server.
 
-### Backend (`backend/.env`)
+## Development Setup
 
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `PORT` | `4000` | Port for the Express server to listen on. |
-| `MONGODB_URI` | `mongodb://localhost:27017/vedaai` | Connection string for MongoDB database. |
-| `REDIS_HOST` | `localhost` | Host address of your Redis server. |
-| `REDIS_PORT` | `6379` | Port of your Redis server. |
-| `GEMINI_API_KEY` | — | **Required (for cloud usage)**: Google Gemini API key. |
-| `FRONTEND_URL` | `http://localhost:3000` | Origin URL used for CORS configuration. |
+First, make sure Docker is running, then launch Redis and MongoDB:
 
-### Frontend (`frontend/.env.local`)
-
-| Variable | Default | Description |
-| :--- | :--- | :--- |
-| `NEXT_PUBLIC_BACKEND_URL` | `http://localhost:4000` | Address of the VedaAI Express API server. |
-
----
-
-## 🏁 Development Setup
-
-### 1. Launch Services (Docker)
-Ensure Docker is running and launch Redis and MongoDB:
 ```bash
 docker compose up -d
 ```
 
-### 2. Configure & Start Backend
+Next, configure and start the backend:
+
 ```bash
 cd backend
 npm install
-# Configure your env values
 cp .env.example .env
 npm run dev
 ```
 
-### 3. Start Frontend
+Finally, start the frontend:
+
 ```bash
 cd ../frontend
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to begin generating question papers!
+You can now open http://localhost:3000 in your browser to begin creating question papers.
 
----
+## Cloud Deployment Guide
 
-## 🌍 Vercel & Production Cloud Deployment
+Deploying the stack is straightforward when using managed cloud databases.
 
-Deploying the stack is simple when connecting to managed cloud databases:
+### Setting Up MongoDB Atlas
 
-### Step 1: Set Up MongoDB Atlas (Database)
-1. Sign up/Log in to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
-2. Create a **Free Shared Cluster**.
-3. Under **Database Access**, create a user with read/write privileges.
-4. Under **Network Access**, whitelist your Vercel deployment IP address (or `0.0.0.0/0` to allow all deployment networks).
-5. Copy your connection string: `mongodb+srv://<username>:<password>@cluster0.xxxx.mongodb.net/vedaai?retryWrites=true&w=majority`.
+1. Log in to MongoDB Atlas and create a Free Shared Cluster.
+2. Under Database Access, create a user with read and write privileges.
+3. Under Network Access, whitelist your deployment IP address.
+4. Copy your connection string to use as your MONGODB_URI.
 
-### Step 2: Set Up Upstash Redis (Queue Cache)
-Because Vercel uses serverless functions, you need a Redis host that connects over HTTP or TCP.
-1. Sign up/Log in to [Upstash](https://upstash.com/).
-2. Create a new **Serverless Redis Database**.
-3. Copy the TCP Endpoint (e.g. `rediss://default:xxxx@xxxx.upstash.io:6379`).
+### Setting Up Upstash Redis
 
-### Step 3: Deploy Backend on Vercel
-Vercel supports Express backends by utilizing serverless functions (`vercel.json`).
-1. Create a `vercel.json` file inside your `backend/` directory:
-   ```json
-   {
-     "version": 2,
-     "builds": [
-       {
-         "src": "dist/index.js",
-         "use": "@vercel/node"
-       }
-     ],
-     "routes": [
-       {
-         "src": "/(.*)",
-         "dest": "dist/index.js"
-       }
-     ]
-   }
-   ```
-2. Run `vercel` (via Vercel CLI) inside the `backend` folder, or import the backend repository on the Vercel dashboard.
-3. Configure the **Environment Variables** in Vercel:
-   - `MONGODB_URI`: *Your MongoDB Atlas connection URL*
-   - `REDIS_HOST` & `REDIS_PORT`: *Your Upstash Redis connection details*
-   - `GEMINI_API_KEY`: *Your Google Gemini API key*
-   - `FRONTEND_URL`: *Your Vercel Frontend URL*
+Since serverless functions require HTTP or TCP connections, we recommend Upstash for Redis.
 
-### Step 4: Deploy Frontend on Vercel
-1. Import the `frontend` folder into Vercel.
-2. Configure **Environment Variables**:
-   - `NEXT_PUBLIC_BACKEND_URL`: *Your Vercel Backend Deploy URL*
-3. Deploy!
+1. Log in to Upstash and create a new Serverless Redis Database.
+2. Copy the TCP Endpoint to use for your Redis configuration.
 
----
+### Deploying the Backend on Render
 
-## 📝 API Reference
+We recommend deploying the backend on Render to support persistent WebSockets and background processing. 
 
-| Method | Path | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/assignments` | Fetches list of all assignments. |
-| `POST` | `/api/assignments` | Uploads files and queues question paper generation. |
-| `GET` | `/api/assignments/:id` | Returns status/result of a specific paper. |
-| `DELETE` | `/api/assignments/:id` | Deletes an assignment. |
-| `POST` | `/api/assignments/:id/regenerate` | Triggers regeneration of questions. |
-| `GET` | `/api/health` | Service status health check. |
+1. Create a new Web Service on Render and connect your GitHub repository.
+2. Set the build command to `npm install && npm run build` and the start command to `npm start`.
+3. Add your environment variables in the Render dashboard, including MONGODB_URI, REDIS_URL, GEMINI_API_KEY, and FRONTEND_URL.
+4. Once deployed, Render will provide a URL for your backend. Note that Render's free tier spins down after 15 minutes of inactivity. You can use a ping service like UptimeRobot to hit the `/api/health` endpoint every 5 minutes to keep it awake.
 
----
+### Deploying the Frontend on Vercel
 
-*Made with 🧡 for teachers and educators.*
+1. Import your frontend folder into a new Vercel project.
+2. Add the NEXT_PUBLIC_BACKEND_URL environment variable, pointing it to your Render backend URL.
+3. Deploy the project.
+
+## API Reference
+
+* `GET /api/assignments`: Fetches a list of all assignments.
+* `POST /api/assignments`: Uploads files and queues a question paper generation.
+* `GET /api/assignments/:id`: Returns the status and result of a specific paper.
+* `DELETE /api/assignments/:id`: Deletes an assignment.
+* `POST /api/assignments/:id/regenerate`: Triggers a regeneration of the questions.
+* `GET /api/health`: A lightweight health check endpoint for the service.
+
+Made with love for teachers and educators.
