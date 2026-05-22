@@ -35,6 +35,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use('/api/assignments', assignmentRoutes);
 app.get('/api/health', (_, res) => res.json({ status: 'ok', timestamp: new Date() }));
+app.head('/api/health', (_, res) => res.status(200).end());
 
 const io = initWebSocket(httpServer);
 initWorker(io);
